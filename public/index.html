@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AskAJac</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .blue-danube { background-color: #4A638D; }
+    .blue-danube-hover:hover { background-color: #3a4f71; }
+    .text-blue-danube { color: #4A638D; }
+    .text-blue-danube-light { color: #6B80A4; } /* lighter shade for headings */
+    .border-blue-danube { border-color: #4A638D; }
+    .border-blue-danube-light { border-color: #6B80A4; } /* lighter border */
+    .placeholder-blue-danube::placeholder { color: #4A638D; opacity: 0.6; }
+  </style>
+</head>
+<body class="bg-white flex items-center justify-center min-h-screen">
+
+  <div class="w-full max-w-xl text-center px-4">
+    <!-- Logo/Title -->
+    <h1 class="text-3xl font-bold text-blue-danube mb-6">AskAJac</h1>
+
+    <!-- Search Box -->
+    <div class="flex items-center border border-blue-danube rounded-xl shadow-md overflow-hidden">
+      <input 
+        id="userInput" 
+        type="text" 
+        placeholder="Type your rough idea or prompt..." 
+        class="flex-grow px-4 py-3 text-gray-700 outline-none placeholder-blue-danube rounded-xl shadow-sm" 
+      />
+      <button 
+        id="askBtn"
+        onclick="processPrompt()" 
+        class="blue-danube text-white px-6 py-3 font-medium blue-danube-hover transition rounded-xl shadow-md"
+      >
+        Ask
+      </button>
+    </div>
+
+    <!-- AI Response Section -->
+    <div id="responseBox" class="mt-8 hidden">
+      <div class="max-w-md mx-auto">
+        <h2 class="text-lg font-semibold text-blue-danube-light mb-2 text-center">Optimized Prompt:</h2>
+        <div class="bg-gray-50 p-4 rounded-lg border border-blue-danube-light shadow-md text-left">
+          <p id="aiResponse" class="text-gray-800 whitespace-pre-line leading-relaxed"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function processPrompt() {
+      const input = document.getElementById("userInput").value;
+      const responseBox = document.getElementById("responseBox");
+      const aiResponse = document.getElementById("aiResponse");
+      const askBtn = document.getElementById("askBtn");
+
+      // Loading state
+      const originalText = askBtn.textContent;
+      askBtn.textContent = "Thinking…";
+      askBtn.disabled = true;
+      askBtn.classList.add("opacity-80", "cursor-not-allowed");
+
+      if (!input.trim()) {
+        aiResponse.innerText = "Please enter a prompt.";
+        responseBox.classList.remove("hidden");
+        responseBox.scrollIntoView({ behavior: "smooth", block: "start" });
+        askBtn.textContent = originalText;
+        askBtn.disabled = false;
+        askBtn.classList.remove("opacity-80", "cursor-not-allowed");
+        return;
+      }
+
+      try {
+        // Replace this URL with your backend endpoint that calls OpenAI/Claude/Gemini
+        const response = await fetch("/api/optimize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: input })
+        });
+
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+
+        const data = await response.json();
+        aiResponse.innerText = data.optimizedPrompt || "(No response returned)";
+      } catch (error) {
+        aiResponse.innerText = "Error: Unable to fetch optimized prompt.";
+        console.error(error);
+      }
+
+      responseBox.classList.remove("hidden");
+      responseBox.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      // Reset button
+      askBtn.textContent = originalText;
+      askBtn.disabled = false;
+      askBtn.classList.remove("opacity-80", "cursor-not-allowed");
+    }
+
+    // Trigger Ask on Enter key
+    document.getElementById("userInput").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        processPrompt();
+      }
+    });
+  </script>
+</body>
+</html>
