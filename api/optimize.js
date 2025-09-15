@@ -1,11 +1,20 @@
-// /api/optimize.js — Vercel Serverless Function (uses global fetch on Node 18+)
+// /api/optimize.js — Vercel Serverless Function (Node 18+, uses global fetch)
 module.exports = async (req, res) => {
   try {
     if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
 
-    const { input } = req.body || {};
-    if (!input || !input.trim()) return res.status(200).json({ optimized: "" });
+    // Robust body parsing (Vercel may give you a string or an object)
+    let body = req.body;
+    if (typeof body === "string") {
+      try { body = JSON.parse(body); } 
+      catch { return res.status(400).json({ optimized: "", error: "Invalid JSON body" }); }
+    }
+    body = body || {};
+    const input = typeof body.input === "string" ? body.input.trim() : "";
 
+    if (!input) return res.status(200).json({ optimized: "" });
+
+    // Call OpenAI as Lyra
     const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -30,8 +39,8 @@ module.exports = async (req, res) => {
     const j = await r.json();
     const optimized = j?.choices?.[0]?.message?.content?.trim() ?? "";
 
-    res.status(200).json({ optimized });
+    return res.status(200).json({ optimized });
   } catch (e) {
-    res.status(500).json({ optimized: "", error: String(e) });
+    return res.status(500).json({ optimized: "", error: String(e) });
   }
 };
