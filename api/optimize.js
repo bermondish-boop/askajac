@@ -3,10 +3,10 @@ module.exports = async (req, res) => {
   try {
     if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
 
-    // Robust body parsing (Vercel may give you a string or an object)
+    // Robust body parsing (Vercel may give a string or an object)
     let body = req.body;
     if (typeof body === "string") {
-      try { body = JSON.parse(body); } 
+      try { body = JSON.parse(body); }
       catch { return res.status(400).json({ optimized: "", error: "Invalid JSON body" }); }
     }
     body = body || {};
